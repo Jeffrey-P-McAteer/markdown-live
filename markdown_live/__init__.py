@@ -42,6 +42,11 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path[1:]
 
+        file_mime_type, mime_encoding = mimetypes.guess_type(path)
+        if file_mime_type is None:
+            file_mime_type = 'application/octet-stream'
+        file_mime_type = file_mime_type.lower()
+
         if path == 'markdown.css':
             return self.stylesheet_response()
         elif path == 'favicon.ico':
@@ -67,7 +72,10 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
             return self.make_html(content)
 
         # Finally, try parsing the file as markdown
-        return self.markdown_file(full_path)
+        if 'markdown' in file_mime_type:
+            return self.markdown_file(full_path)
+        else:
+            return self.serve_root_file(full_path, file_mime_type)
 
     def make_html(self, content, last_modified=None):
         full_page = [
@@ -118,6 +126,21 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         rel_path = os.path.join(os.path.dirname(__file__), filename)
 
         with open(rel_path, 'rb') as f:
+            self.send_response(200)
+            self.send_header("Content-type", content_type)
+            fs = os.fstat(f.fileno())
+            self.send_header("Content-Length", str(fs[6]))
+            self.send_header("Last-Modified",
+                             self.date_time_string(fs.st_mtime))
+            self.end_headers()
+
+            shutil.copyfileobj(f, self.wfile)
+
+    def serve_root_file(self, full_path, content_type):
+        """
+        Returns a 200 response with the content of the filename, and the given content type.
+        """
+        with open(full_path, 'rb') as f:
             self.send_response(200)
             self.send_header("Content-type", content_type)
             fs = os.fstat(f.fileno())
