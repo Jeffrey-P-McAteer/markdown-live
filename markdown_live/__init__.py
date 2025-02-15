@@ -70,7 +70,7 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
                 #        link_path = os.path.sep.join( link_path.split(os.path.sep)[1:] )
 
                 content.append(
-                    '<div><a href="./{}">{}</a>'.format(
+                    '<div><a href="./{}">{}</a></div>'.format(
                         entry,
                         entry
                     )
