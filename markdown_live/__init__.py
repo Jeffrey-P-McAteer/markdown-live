@@ -63,9 +63,14 @@ class MarkdownHTTPRequestHandler(BaseHTTPRequestHandler):
         if os.path.isdir(full_path):
             content = []
             for entry in os.listdir(full_path):
+                link_path = os.path.join(path, entry)
+                if not os.path.exists(os.path.join(self.server.root_location, link_path)):
+                    # pop a dir off as a rapid, sloppy bug-fix
+                    link_path = os.path.sep.join( link_path.split(os.path.sep)[1:] )
+
                 content.append(
                     '<div><a href="{}">{}</a>'.format(
-                        os.path.join(path, entry),
+                        link_path,
                         entry
                     )
                 )
